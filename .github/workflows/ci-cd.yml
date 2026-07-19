@@ -1,0 +1,103 @@
+name: CI/CD Pipeline
+
+on:
+  push:
+    branches: [main, develop]
+  pull_request:
+    branches: [main]
+
+env:
+  NODE_VERSION: '20'
+  REGISTRY: ghcr.io
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Run linter
+        run: npm run lint
+
+      - name: Run type check
+        run: npm run type-check
+
+      - name: Run tests
+        run: npm run test -- --coverage
+
+      - name: Upload coverage
+        uses: codecov/codecov-action@v3
+
+  build:
+    needs: test
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        app: [web, api, admin]
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Build ${{ matrix.app }}
+        run: npm run build --workspace=@quickmart/${{ matrix.app }}
+
+      - name: Build Docker image
+        run: |
+          docker build -t ${{ env.REGISTRY }}/${{ github.repository }}/${{ matrix.app }}:${{ github.sha }} ./apps/${{ matrix.app }}
+
+      - name: Push to registry
+        if: github.ref == 'refs/heads/main'
+        run: |
+          echo ${{ secrets.GITHUB_TOKEN }} | docker login ${{ env.REGISTRY }} -u ${{ github.actor }} --password-stdin
+          docker push ${{ env.REGISTRY }}/${{ github.repository }}/${{ matrix.app }}:${{ github.sha }}
+
+  deploy:
+    needs: build
+    if: github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: us-east-1
+
+      - name: Setup kubectl
+        uses: azure/setup-kubectl@v3
+
+      - name: Update kubeconfig
+        run: aws eks update-kubeconfig --name quickmart-cluster --region us-east-1
+
+      - name: Deploy to Kubernetes
+        run: |
+          kubectl set image deployment/quickmart-api api=${{ env.REGISTRY }}/${{ github.repository }}/api:${{ github.sha }} -n quickmart
+          kubectl set image deployment/quickmart-web web=${{ env.REGISTRY }}/${{ github.repository }}/web:${{ github.sha }} -n quickmart
+          kubectl set image deployment/quickmart-admin admin=${{ env.REGISTRY }}/${{ github.repository }}/admin:${{ github.sha }} -n quickmart
+          kubectl rollout status deployment/quickmart-api -n quickmart
+          kubectl rollout status deployment/quickmart-web -n quickmart
+          kubectl rollout status deployment/quickmart-admin -n quickmart
+
+      - name: Verify deployment
+        run: |
+          kubectl get pods -n quickmart
+          kubectl get svc -n quickmart
