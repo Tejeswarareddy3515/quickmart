@@ -24,7 +24,7 @@ export class WarehouseService {
     return this.prisma.product.findMany({
       where: {
         isActive: true,
-        stock: { lte: { lowStockThreshold: true } },
+        stock: { lte: 10 },
       },
       orderBy: { stock: 'asc' },
     });

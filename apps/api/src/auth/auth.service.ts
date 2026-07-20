@@ -118,6 +118,7 @@ export class AuthService {
     if (!user) {
       user = await this.prisma.user.create({
         data: {
+          email: `${dto.phone}@quickmart.local`,
           phone: dto.phone,
           phoneVerified: true,
           referralCode: this.generateReferralCode(),

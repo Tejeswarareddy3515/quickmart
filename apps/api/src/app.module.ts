@@ -6,11 +6,7 @@ import { BullModule } from '@nestjs/bullmq';
 
 import { AuthModule } from './auth/auth.module';
 import { UsersModule } from './users/users.module';
-import { ProductsModule } from './products/products.module';
-import { OrdersModule } from './orders/orders.module';
-import { PaymentsModule } from './payments/payments.module';
 import { DeliveryModule } from './delivery/delivery.module';
-import { AiModule } from './ai/ai.module';
 import { AdminModule } from './admin/admin.module';
 import { NotificationsModule } from './notifications/notifications.module';
 import { WarehouseModule } from './warehouse/warehouse.module';
@@ -36,11 +32,7 @@ import { CommonModule } from './common/common.module';
     CommonModule,
     AuthModule,
     UsersModule,
-    ProductsModule,
-    OrdersModule,
-    PaymentsModule,
     DeliveryModule,
-    AiModule,
     AdminModule,
     NotificationsModule,
     WarehouseModule,
