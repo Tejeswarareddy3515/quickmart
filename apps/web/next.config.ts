@@ -1,6 +1,12 @@
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
+  // Allow these origins to request dev-only _next resources from other hosts
+  // Resolves: "Cross origin request detected" warning during local network testing
+  allowedDevOrigins: [
+    'http://localhost:3000',
+    'http://192.168.29.48:3000',
+  ],
   outputFileTracingRoot: '/Users/tejeswarareddy/Downloads/quickmart',
   images: {
     domains: ['images.unsplash.com', 'cdn.quickmart.com', 'lh3.googleusercontent.com'],

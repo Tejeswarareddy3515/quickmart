@@ -4,6 +4,8 @@ import { ThrottlerModule } from '@nestjs/throttler';
 import { ScheduleModule } from '@nestjs/schedule';
 import { BullModule } from '@nestjs/bullmq';
 
+import { AppController } from './app.controller';
+
 import { AuthModule } from './auth/auth.module';
 import { UsersModule } from './users/users.module';
 import { DeliveryModule } from './delivery/delivery.module';
@@ -18,17 +20,23 @@ import { CommonModule } from './common/common.module';
       isGlobal: true,
       envFilePath: ['../../.env', '.env'],
     }),
-    ThrottlerModule.forRoot([{
-      ttl: 60000,
-      limit: 100,
-    }]),
+
+    ThrottlerModule.forRoot([
+      {
+        ttl: 60000,
+        limit: 100,
+      },
+    ]),
+
     ScheduleModule.forRoot(),
+
     BullModule.forRoot({
       connection: {
         host: process.env.REDIS_HOST || 'localhost',
-        port: parseInt(process.env.REDIS_PORT) || 6379,
+        port: parseInt(process.env.REDIS_PORT || '6379', 10),
       },
     }),
+
     CommonModule,
     AuthModule,
     UsersModule,
@@ -37,5 +45,7 @@ import { CommonModule } from './common/common.module';
     NotificationsModule,
     WarehouseModule,
   ],
+
+  controllers: [AppController],
 })
 export class AppModule {}
