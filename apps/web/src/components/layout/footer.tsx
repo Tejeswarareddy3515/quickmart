@@ -18,7 +18,7 @@ export function Footer() {
               <span className="text-xl font-bold text-white">QuickMart</span>
             </Link>
             <p className="text-slate-400 text-sm leading-relaxed">
-              India's fastest quick commerce platform. Fresh groceries delivered in 10 minutes, 24/7.
+              India&apos;s fastest quick commerce platform. Fresh groceries delivered in 10 minutes, 24/7.
             </p>
             <div className="flex gap-3">
               {[Instagram, Twitter, Facebook, Linkedin].map((Icon, i) => (

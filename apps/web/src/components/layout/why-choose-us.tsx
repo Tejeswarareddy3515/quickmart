@@ -29,7 +29,7 @@ export function WhyChooseUs() {
             Why Choose QuickMart?
           </h2>
           <p className="text-slate-500 dark:text-slate-400 max-w-xl mx-auto">
-            We're committed to providing the best shopping experience
+            We&apos;re committed to providing the best shopping experience
           </p>
         </motion.div>
 

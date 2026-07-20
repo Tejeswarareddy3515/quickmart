@@ -3,14 +3,27 @@
 import { motion } from "framer-motion";
 import { ArrowRight, Zap, Clock, Shield } from "lucide-react";
 import Link from "next/link";
+import { DotField } from "@/components/3d/dot-field";
 
 export function HeroSection() {
   return (
     <section className="relative min-h-screen w-full overflow-hidden bg-gradient-to-b from-[#0f0f23] via-[#1a1a3e] to-[#0d0d2b]">
       <div className="absolute inset-0 z-0 overflow-hidden">
-        <div className="absolute left-[-10%] top-[10%] h-64 w-64 rounded-full bg-indigo-500/20 blur-3xl" />
-        <div className="absolute right-[-8%] top-[20%] h-72 w-72 rounded-full bg-fuchsia-500/20 blur-3xl" />
-        <div className="absolute bottom-[-10%] left-[20%] h-80 w-80 rounded-full bg-amber-500/10 blur-3xl" />
+        <DotField
+          dotRadius={1.5}
+          dotSpacing={6}
+          cursorRadius={500}
+          cursorForce={0.1}
+          bulgeOnly
+          bulgeStrength={48}
+          glowRadius={140}
+          sparkle={false}
+          waveAmplitude={18}
+          gradientFrom="#000000"
+          gradientTo="rgba(180, 151, 207, 0.25)"
+          glowColor="#120F17"
+          className="absolute inset-0"
+        />
       </div>
 
       <div className="relative z-10 flex flex-col items-center justify-center min-h-screen px-4 sm:px-6 lg:px-8">
