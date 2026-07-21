@@ -54,3 +54,4 @@ infra/docker/volumes/
 
 # Kubernetes secrets
 infra/k8s/secrets/
+.env.razorpay
