@@ -2,7 +2,15 @@
 
 import { useState } from "react";
 import { motion } from "framer-motion";
-import { Mail, Lock, Eye, EyeOff, ArrowRight, Smartphone, Chrome } from "lucide-react";
+import {
+  Mail,
+  Lock,
+  Eye,
+  EyeOff,
+  ArrowRight,
+  Smartphone,
+  Chrome,
+} from "lucide-react";
 import Link from "next/link";
 import toast from "react-hot-toast";
 
@@ -13,19 +21,40 @@ export default function LoginPage() {
   const [isLoading, setIsLoading] = useState(false);
 
   const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setIsLoading(true);
+  e.preventDefault();
+  setIsLoading(true);
 
-    try {
-      await new Promise((resolve) => setTimeout(resolve, 1500));
-      toast.success("Login successful!");
-      window.location.href = "/";
-    } catch (error) {
-      toast.error("Invalid credentials");
-    } finally {
-      setIsLoading(false);
+  try {
+    const response = await fetch("http://localhost:3001/v1/auth/login", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      credentials: "include",
+      body: JSON.stringify({
+        email,
+        password,
+      }),
+    });
+
+    const data = await response.json();
+
+    if (!response.ok) {
+      throw new Error(data.message || "Login failed");
     }
-  };
+
+    // Save the real JWT token
+    localStorage.setItem("authToken", data.accessToken);
+
+    toast.success("Login successful!");
+
+    window.location.href = "/";
+  } catch (error: any) {
+    toast.error(error.message || "Login failed");
+  } finally {
+    setIsLoading(false);
+  }
+};
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-950 via-indigo-950 to-slate-950 flex items-center justify-center px-4">

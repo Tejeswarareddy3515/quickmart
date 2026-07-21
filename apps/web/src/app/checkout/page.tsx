@@ -1,11 +1,14 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useCallback } from "react";
 import { motion } from "framer-motion";
 import { MapPin, CreditCard, Wallet, Banknote, Smartphone, ChevronRight, Shield, Truck, Clock } from "lucide-react";
 import { useCart } from "@/components/cart/cart-context";
+import RazorpayPayment from "@/components/payment/razorpay-payment";
+import { useRazorpayPayment } from "@/hooks/use-razorpay-payment";
 import Link from "next/link";
 import toast from "react-hot-toast";
+import axios from "axios";
 
 const addresses = [
   { id: "1", label: "Home", address: "123 Main Street, Andheri West", city: "Mumbai", pincode: "400053", isDefault: true },
@@ -13,8 +16,7 @@ const addresses = [
 ];
 
 const paymentMethods = [
-  { id: "upi", name: "UPI", icon: Smartphone, description: "Pay via UPI apps" },
-  { id: "card", name: "Credit/Debit Card", icon: CreditCard, description: "Visa, Mastercard, RuPay" },
+  { id: "razorpay", name: "Online Payment", icon: CreditCard, description: "Credit/Debit Card, UPI, Wallet" },
   { id: "wallet", name: "Wallet", icon: Wallet, description: "QuickMart Wallet: ₹0" },
   { id: "cod", name: "Cash on Delivery", icon: Banknote, description: "Pay when you receive" },
 ];
@@ -22,20 +24,112 @@ const paymentMethods = [
 export default function CheckoutPage() {
   const { items, total, itemCount } = useCart();
   const [selectedAddress, setSelectedAddress] = useState(addresses[0]);
-  const [selectedPayment, setSelectedPayment] = useState("upi");
+  const [selectedPayment, setSelectedPayment] = useState("razorpay");
   const [isProcessing, setIsProcessing] = useState(false);
+  const [showRazorpay, setShowRazorpay] = useState(false);
+  const { createPaymentOrder, verifyPayment, paymentDetails, isProcessing: isPaymentProcessing } = useRazorpayPayment();
 
   const deliveryFee = total > 500 ? 0 : 40;
   const grandTotal = total + deliveryFee;
 
+  const handleRazorpaySuccess = async (paymentId: string, signature: string) => {
+    if (!paymentDetails) return;
+    
+    try {
+      setIsProcessing(true);
+      await verifyPayment(
+        paymentDetails.razorpayOrderId,
+        paymentId,
+        signature,
+        paymentDetails.orderNumber
+      );
+
+      // Create order after successful payment
+      const orderResponse = await axios.post(
+        `${process.env.NEXT_PUBLIC_API_URL || "http://localhost:3001"}/orders`,
+        {
+          items,
+          total: grandTotal,
+          deliveryAddress: selectedAddress,
+          paymentMethod: "razorpay",
+          paymentId,
+        },
+        {
+          headers: {
+            Authorization: `Bearer ${localStorage.getItem("authToken")}`,
+          },
+        }
+      );
+
+      toast.success("Payment successful! Order confirmed.");
+      localStorage.removeItem("cart");
+      setTimeout(() => {
+        window.location.href = `/order-success?orderId=${orderResponse.data.id}`;
+      }, 1000);
+    } catch (error: any) {
+      toast.error("Payment verification failed");
+    } finally {
+      setIsProcessing(false);
+      setShowRazorpay(false);
+    }
+  };
+
+  const handleRazorpayError = (error: string) => {
+    toast.error(error);
+    setShowRazorpay(false);
+  };
+
   const handlePlaceOrder = async () => {
+    if (selectedPayment === "razorpay" && !showRazorpay) {
+      // Initialize Razorpay payment
+      setShowRazorpay(true);
+      const orderId = `ORD-${Date.now()}`;
+      
+      try {
+        const user = JSON.parse(localStorage.getItem("user") || "{}");
+        await createPaymentOrder(
+          orderId,
+          grandTotal,
+          user.email || "customer@quickmart.com",
+          user.phone || "9999999999",
+          user.name || "Customer"
+        );
+      } catch (error) {
+        setShowRazorpay(false);
+      }
+      return;
+    }
+
     setIsProcessing(true);
-    // Simulate API call
-    await new Promise((resolve) => setTimeout(resolve, 2000));
-    toast.success("Order placed successfully!");
-    setIsProcessing(false);
-    // Redirect to order success
-    window.location.href = "/order-success";
+    try {
+      // Create order in database
+      const orderResponse = await axios.post(
+        `${process.env.NEXT_PUBLIC_API_URL || "http://localhost:3001"}/orders`,
+        {
+          items,
+          total: grandTotal,
+          deliveryAddress: selectedAddress,
+          paymentMethod: selectedPayment,
+        },
+        {
+          headers: {
+            Authorization: `Bearer ${localStorage.getItem("authToken")}`,
+          },
+        }
+      );
+
+      toast.success("Order placed successfully!");
+      // Clear cart
+      localStorage.removeItem("cart");
+      setTimeout(() => {
+        window.location.href = `/order-success?orderId=${orderResponse.data.id}`;
+      }, 1000);
+    } catch (error: any) {
+      toast.error(error.response?.data?.message || "Failed to place order");
+    } finally {
+      setIsProcessing(false);
+      setShowRazorpay(false);
+    }
   };
 
   if (items.length === 0) {
@@ -211,24 +305,39 @@ export default function CheckoutPage() {
                 </div>
               </div>
 
-              {/* Place Order */}
-              <button
-                onClick={handlePlaceOrder}
-                disabled={isProcessing}
-                className="w-full py-4 bg-gradient-to-r from-indigo-600 to-purple-600 text-white font-semibold rounded-xl shadow-lg shadow-indigo-500/25 hover:shadow-indigo-500/40 transition-all hover:-translate-y-0.5 disabled:opacity-70 disabled:cursor-not-allowed flex items-center justify-center gap-2"
-              >
-                {isProcessing ? (
-                  <>
-                    <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin" />
-                    Processing...
-                  </>
-                ) : (
-                  <>
-                    Place Order
-                    <ChevronRight className="w-5 h-5" />
-                  </>
-                )}
-              </button>
+              {/* Place Order / Razorpay */}
+              {showRazorpay && paymentDetails ? (
+                <RazorpayPayment
+                  amount={paymentDetails.amount}
+                  orderId={paymentDetails.orderNumber}
+                  customerEmail={paymentDetails.customerEmail}
+                  customerPhone={paymentDetails.customerPhone}
+                  customerName={JSON.parse(localStorage.getItem("user") || "{}").name || "Customer"}
+                  razorpayKey={paymentDetails.key}
+                  razorpayOrderId={paymentDetails.razorpayOrderId}
+                  onSuccess={handleRazorpaySuccess}
+                  onError={handleRazorpayError}
+                  isProcessing={isProcessing}
+                />
+              ) : (
+                <button
+                  onClick={handlePlaceOrder}
+                  disabled={isProcessing}
+                  className="w-full py-4 bg-gradient-to-r from-indigo-600 to-purple-600 text-white font-semibold rounded-xl shadow-lg shadow-indigo-500/25 hover:shadow-indigo-500/40 transition-all hover:-translate-y-0.5 disabled:opacity-70 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+                >
+                  {isProcessing ? (
+                    <>
+                      <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                      Processing...
+                    </>
+                  ) : (
+                    <>
+                      {selectedPayment === "razorpay" ? "Proceed to Payment" : "Place Order"}
+                      <ChevronRight className="w-5 h-5" />
+                    </>
+                  )}
+                </button>
+              )}
 
               <div className="mt-4 flex items-center justify-center gap-2 text-sm text-slate-500">
                 <Shield className="w-4 h-4 text-green-500" />

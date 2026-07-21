@@ -27,16 +27,13 @@ async function bootstrap() {
   app.use(cookieParser());
 
   // CORS
-  app.enableCors({
-    origin: [
-      configService.get('WEB_URL'),
-      configService.get('ADMIN_URL'),
-      configService.get('DELIVERY_URL'),
-    ],
-    credentials: true,
-    methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
-    allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With'],
-  });
+ // CORS
+app.enableCors({
+  origin: true,
+  credentials: true,
+  methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With'],
+});
 
   // API Versioning
   app.enableVersioning({

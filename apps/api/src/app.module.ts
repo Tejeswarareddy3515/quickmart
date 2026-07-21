@@ -13,6 +13,8 @@ import { AdminModule } from './admin/admin.module';
 import { NotificationsModule } from './notifications/notifications.module';
 import { WarehouseModule } from './warehouse/warehouse.module';
 import { CommonModule } from './common/common.module';
+import { CartModule } from './cart/cart.module';
+import { PaymentModule } from './payment/payment.module';
 
 @Module({
   imports: [
@@ -40,10 +42,12 @@ import { CommonModule } from './common/common.module';
     CommonModule,
     AuthModule,
     UsersModule,
+    CartModule,
     DeliveryModule,
     AdminModule,
     NotificationsModule,
     WarehouseModule,
+    PaymentModule,
   ],
 
   controllers: [AppController],

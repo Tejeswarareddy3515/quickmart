@@ -1,4 +1,4 @@
-import { IsEmail, IsString, MinLength, IsOptional, IsPhoneNumber, Length } from 'class-validator';
+import { IsEmail, IsString, MinLength, IsOptional, IsPhoneNumber, Length, Matches } from 'class-validator';
 
 export class RegisterDto {
   @IsEmail()
@@ -9,6 +9,9 @@ export class RegisterDto {
 
   @IsString()
   @MinLength(8)
+  @Matches(/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[^A-Za-z\d]).+$/, {
+    message: 'Password must contain uppercase, lowercase, number, and special character',
+  })
   password: string;
 
   @IsString()
@@ -44,6 +47,7 @@ export class VerifyOtpDto {
 }
 
 export class RefreshTokenDto {
+  @IsOptional()
   @IsString()
-  refreshToken: string;
+  refreshToken?: string;
 }

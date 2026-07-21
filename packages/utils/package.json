@@ -2,18 +2,14 @@
   "name": "@quickmart/utils",
   "version": "1.0.0",
   "private": true,
+  "type": "module",
   "main": "./dist/index.js",
   "types": "./dist/index.d.ts",
   "scripts": {
     "build": "tsc",
     "lint": "echo 'skip lint: no source files'"
   },
-  "dependencies": {
-    "date-fns": "^3.0.6",
-    "lodash": "^4.17.21"
-  },
   "devDependencies": {
-    "@types/lodash": "^4.14.202",
     "typescript": "^5.3.0"
   }
 }
