@@ -1,1 +1,9 @@
-export default function RootLayout({ children }: { children: React.ReactNode }) { return <html lang="en"><body className="bg-slate-950">{children}</body></html> }
+export default function RootLayout({ children }: { children: React.ReactNode }) {
+  return (
+    <html lang="en">
+      <body className="bg-background text-foreground antialiased min-h-screen">
+        {children}
+      </body>
+    </html>
+  );
+}
